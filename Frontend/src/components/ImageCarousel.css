@@ -1,0 +1,43 @@
+.carousel-container {
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: 20px;
+  overflow: hidden;
+  margin-top: -18px;
+  border-radius: 0;
+  box-shadow: none;
+  height: 400px;
+}
+
+.carousel-image {
+  width: 100%;
+  display: block;
+  height: 500px;
+  object-fit: cover;
+}
+
+.carousel-dots {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.dot.active {
+  background-color: #007bff;
+}

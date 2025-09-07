@@ -1,0 +1,471 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f7f6;
+  color: #333;
+}
+
+.propiedades-list-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 20px auto;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #eee;
+}
+
+.app-header h1 {
+  color: #007bff;
+  margin: 0;
+  font-size: 2.5em;
+}
+
+.auth-buttons button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  margin-left: 10px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-login {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-login:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.btn-register-new-user {
+  background-color: #17a2b8;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  margin-left: 10px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-register-new-user:hover {
+  background-color: #138496;
+  transform: translateY(-2px);
+}
+
+.btn-logout {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-logout:hover {
+  background-color: #c82333;
+  transform: translateY(-2px);
+}
+
+.welcome-message {
+  font-size: 1.1em;
+  margin-right: 15px;
+  color: #555;
+  font-weight: bold;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.list-header h2 {
+  color: #333;
+  margin: 0;
+  font-size: 2em;
+}
+
+.btn-add-new {
+  background-color: #6f42c1;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-add-new:hover {
+  background-color: #5a2f9c;
+  transform: translateY(-2px);
+}
+
+.loading-message, .error-message, .no-propiedades-message {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 1.1em;
+  color: #666;
+}
+
+.error-message {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.propiedades-grid {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+.propiedad-card {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.propiedad-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.card-image-container {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #e9ecef;
+}
+
+.propiedad-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.card-content {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.card-title {
+  font-size: 1.5em;
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #007bff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-detail {
+  font-size: 0.95em;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+.card-availability {
+  font-size: 0.95em;
+  margin-bottom: 15px;
+  font-weight: bold;
+  color: #0e461b;
+}
+
+.card-availability strong {
+  color: #333;
+}
+
+.propiedad-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.propiedad-actions button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s ease;
+}
+
+.btn-edit {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.btn-edit:hover {
+  background-color: #e0a800;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #c82333;
+}
+
+.form-overlay, .auth-form-overlay, .propiedad-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.form-card, .auth-form-card, .propiedad-detail-modal {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 500px;
+  position: relative;
+}
+
+.auth-form-card {
+  max-width: 400px;
+  text-align: center;
+}
+
+.form-card h3, .auth-form-card h3, .propiedad-detail-modal h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+  font-size: 2em;
+}
+.auth-form-card h3 {
+  font-size: 1.8em;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select,
+.form-group input[type="email"],
+.form-group input[type="password"] {
+  width: calc(100% - 22px);
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+  box-sizing: border-box;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-group input[type="checkbox"] {
+  margin-right: 10px;
+  transform: scale(1.2);
+}
+
+.form-actions {
+  margin-top: 25px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.auth-form-card .form-actions {
+  justify-content: space-around;
+  gap: 15px;
+}
+
+.form-actions button, .auth-form-card button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.auth-form-card button[type="submit"] {
+  flex-grow: 1;
+  background-color: #007bff;
+  color: white;
+}
+
+.form-actions button[type="submit"], .auth-form-card .btn-login {
+  background-color: #007bff;
+  color: white;
+}
+
+.form-actions button[type="submit"]:hover, .auth-form-card button[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+.form-actions .btn-cancel, .auth-form-card .btn-cancel {
+  background-color: #6c757d;
+  color: white;
+}
+
+.form-actions .btn-cancel:hover, .auth-form-card .btn-cancel:hover {
+  background-color: #5a6268;
+}
+
+.image-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+  justify-content: center;
+  border: 1px dashed #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.image-preview {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.image-input-label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+
+.image-upload-area {
+  border: 2px dashed #007bff;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 8px;
+  background-color: #eaf6ff;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.image-upload-area:hover {
+  background-color: #d8edff;
+  border-color: #0056b3;
+}
+
+.image-upload-area p {
+  margin: 0;
+  color: #007bff;
+  font-weight: bold;
+}
+
+.propiedad-detail-modal {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.propiedad-detail-modal h2 {
+  color: #007bff;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 2.2em;
+  text-align: center;
+}
+
+.detail-image-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.detail-image {
+  max-width: 100%;
+  height: auto;
+  max-height: 350px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  object-fit: contain;
+}
+
+.detail-info p {
+  margin-bottom: 10px;
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+
+.detail-info p strong {
+  color: #333;
+  margin-right: 5px;
+}
+
+.detail-info .description {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-top: 20px;
+}
+
+.detail-info .availability {
+  font-weight: bold;
+  color: #28a745;
+}
+
+.detail-close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 2em;
+  cursor: pointer;
+  color: #666;
+  line-height: 1;
+}
+
+.detail-close-button:hover {
+  color: #333;
+}
