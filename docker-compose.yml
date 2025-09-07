@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./Backend
+    container_name: inmobiliaria-backend
+    ports:
+      - "0.0.0.0:5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DB_URL=mongodb://mongo:27017/inmobiliaria
+    depends_on:
+      - mongo
+    volumes:
+      - ./Backend/uploads:/app/uploads
+    networks:
+      - inmobiliaria-network
+
+  frontend:
+    build: ./Frontend/inmobiliaria-frontend
+    container_name: inmobiliaria-frontend
+    ports:
+      - "0.0.0.0:3000:80"
+    depends_on:
+      - backend
+    networks:
+      - inmobiliaria-network
+
+  mongo:
+    image: mongo:latest
+    container_name: inmobiliaria-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - inmobiliaria-network
+
+networks:
+  inmobiliaria-network:
+    driver: bridge
+
+volumes:
+  mongo_data: 
