@@ -1,7 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = `${window.location.origin}/api/propiedades`;
+// Configurar interceptor específico para este componente
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    console.log('Interceptor PropiedadForm:', {
+      url: config.url,
+      method: config.method,
+      hasToken: !!token,
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'No token'
+    });
+    
+    if (token && config.method && config.method.toLowerCase() !== 'get') {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('Token agregado por interceptor');
+    }
+    
+    return config;
+  },
+  (error) => {
+    console.error('Error en interceptor:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Usar rutas de API de Vercel
+const API_URL = '/propiedades';
 
 function PropiedadForm({ onSuccess, onCancel }) {
     const [formData, setFormData] = useState({
@@ -120,11 +146,23 @@ function PropiedadForm({ onSuccess, onCancel }) {
         });
 
         try {
-            await axios.post(API_URL, formDataToSend, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            // Verificar token antes de enviar
+            const token = localStorage.getItem('token');
+            console.log('🔑 Token completo:', token);
+            console.log('🔑 Token existe:', token ? 'SÍ' : 'NO');
+            
+            if (!token) {
+                setError('No hay token de autenticación. Por favor, inicia sesión nuevamente.');
+                return;
+            }
+            
+            console.log('📤 Enviando petición a:', API_URL);
+            console.log('📤 FormData keys:', Array.from(formDataToSend.keys()));
+            
+            // Dejar que el interceptor de Axios maneje los headers automáticamente
+            const response = await axios.post(API_URL, formDataToSend);
+            
+            console.log('✅ Respuesta exitosa:', response.status);
             onSuccess();
         } catch (err) {
             console.error('Error al enviar el formulario (frontend):', err.response ? err.response.data : err.message);

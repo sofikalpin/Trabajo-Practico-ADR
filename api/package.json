@@ -1,0 +1,10 @@
+{
+  "name": "inmobiliaria-api",
+  "version": "1.0.0",
+  "description": "API Serverless para Sistema Inmobiliario",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.18.0"
+  }
+}
