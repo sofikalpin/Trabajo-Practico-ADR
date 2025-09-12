@@ -4,7 +4,8 @@ import PropiedadForm from './PropiedadForm';
 import PropiedadEditForm from './PropiedadEditForm';
 import PropiedadDetail from './PropiedadDetail';
 
-const API_URL = `${window.location.origin}/api/propiedades`;
+// Usar proxy de Nginx en puerto 80
+const API_URL = '/propiedades';
 
 const formatNumber = (number) => {
     if (number === null || number === undefined || isNaN(number)) {
@@ -83,18 +84,7 @@ function PropiedadesList({ isAuthenticated, setShowAuthForm, setIsRegistering })
         setPropiedades(filtered);
     }, [filterTipo, filterTransaccion, allPropiedades, loading, isAuthenticated]);
 
-    axios.interceptors.request.use(
-        (config) => {
-            const token = localStorage.getItem('token');
-            if (token && config.url.startsWith(`${window.location.origin}/api/`)) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-            return config;
-        },
-        (error) => {
-            return Promise.reject(error);
-        }
-    );
+    // El interceptor de Axios ahora está configurado globalmente en axiosConfig.js
 
     const handleDelete = async (id) => {
         if (!isAuthenticated) {
@@ -267,7 +257,7 @@ function PropiedadesList({ isAuthenticated, setShowAuthForm, setIsRegistering })
                             <div className="card-image-container">
                                 {propiedad.imagenes && propiedad.imagenes.length > 0 && propiedad.imagenes[0].url ? (
                                     <img
-                                        src={`${window.location.origin}${propiedad.imagenes[0].url}`}
+                                        src={propiedad.imagenes[0].url}
                                         alt={propiedad.titulo}
                                         className="propiedad-image"
                                         onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x250?text=Imagen+No+Disponible" }}

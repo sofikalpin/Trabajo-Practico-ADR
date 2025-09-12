@@ -1,45 +1,143 @@
+# ===================================
+# Docker Compose - Sistema Inmobiliario MKalpin
+# Configuración para desarrollo local
+# ===================================
+
 version: '3.8'
 
 services:
-  backend:
-    build: ./Backend
-    container_name: inmobiliaria-backend
-    ports:
-      - "0.0.0.0:5000:5000"
+  # ===================================
+  # Base de datos MongoDB
+  # ===================================
+  mongodb:
+    image: mongo:7.0
+    container_name: inmobiliaria_mongodb
+    restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - PORT=5000
-      - DB_URL=mongodb://mongo:27017/inmobiliaria
-    depends_on:
-      - mongo
+      MONGO_INITDB_DATABASE: inmobiliaria
+      # Configuraciones de seguridad para desarrollo
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-adminpassword}
     volumes:
-      - ./Backend/uploads:/app/uploads
-    networks:
-      - inmobiliaria-network
-
-  frontend:
-    build: ./Frontend/inmobiliaria-frontend
-    container_name: inmobiliaria-frontend
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./Backend/seed.js:/docker-entrypoint-initdb.d/seed.js:ro
     ports:
-      - "0.0.0.0:3000:80"
+      - "${MONGO_PORT:-27017}:27017"
+    networks:
+      - inmobiliaria_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===================================
+  # Backend API
+  # ===================================
+  backend:
+    build: 
+      context: ./Backend
+      dockerfile: dockerfile
+    container_name: inmobiliaria_backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DB_URL=mongodb://mongodb:27017/inmobiliaria
+      - PORT=${BACKEND_PORT:-5000}
+      - JWT_SECRET=${JWT_SECRET:-supersecreta_desarrollo_key}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+    volumes:
+      - backend_uploads:/app/uploads
+      # Para desarrollo, montar código fuente
+      - ./Backend:/app:ro
+      - /app/node_modules
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
     depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - inmobiliaria_network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===================================
+  # Frontend React con Nginx
+  # ===================================
+  frontend:
+    build: 
+      context: ./Frontend
+      dockerfile: Dockerfile
+      target: production
+    container_name: inmobiliaria_frontend
+    restart: unless-stopped
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:5000}
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - inmobiliaria_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===================================
+  # Proxy Nginx (Opcional)
+  # ===================================
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: inmobiliaria_nginx_proxy
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "${PROXY_PORT:-8080}:80"
+    depends_on:
+      - frontend
       - backend
     networks:
-      - inmobiliaria-network
+      - inmobiliaria_network
+    profiles:
+      - proxy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  mongo:
-    image: mongo:latest
-    container_name: inmobiliaria-mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - inmobiliaria-network
-
-networks:
-  inmobiliaria-network:
-    driver: bridge
-
+# ===================================
+# Volúmenes persistentes
+# ===================================
 volumes:
-  mongo_data: 
+  mongodb_data:
+    driver: local
+    name: inmobiliaria_mongodb_data
+  mongodb_config:
+    driver: local
+    name: inmobiliaria_mongodb_config
+  backend_uploads:
+    driver: local
+    name: inmobiliaria_backend_uploads
+
+# ===================================
+# Redes
+# ===================================
+networks:
+  inmobiliaria_network:
+    driver: bridge
+    name: inmobiliaria_network
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

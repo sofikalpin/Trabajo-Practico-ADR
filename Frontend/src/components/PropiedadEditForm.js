@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = `${window.location.origin}/api/propiedades`;
+// Usar proxy de Nginx en puerto 80
+const API_URL = '/propiedades';
 
 function PropiedadEditForm({ propiedad, onSuccess, onCancel }) {
     const [formData, setFormData] = useState({
@@ -163,6 +164,7 @@ function PropiedadEditForm({ propiedad, onSuccess, onCancel }) {
         formDataToSend.append('existingImages', JSON.stringify(imagenesExistentes));
 
         try {
+            // El token se agrega automáticamente por el interceptor global
             await axios.put(`${API_URL}/${propiedad._id}`, formDataToSend, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -384,7 +386,7 @@ function PropiedadEditForm({ propiedad, onSuccess, onCancel }) {
                             <div className="thumbnails-grid existing-images-grid">
                                 {imagenesExistentes.map((imageObj, index) => (
                                     <div key={imageObj.url} className="thumbnail-item">
-                                        <img src={`${window.location.origin}${imageObj.url}`} alt={`Actual ${index}`} className="image-preview-thumbnail" />
+                                        <img src={imageObj.url} alt={`Actual ${index}`} className="image-preview-thumbnail" />
                                         <button type="button" onClick={() => handleRemoveExistingImage(imageObj.url)} className="btn-remove-image">X</button>
                                         <button type="button" onClick={() => handleSetPrincipalImage(imageObj.url)} className={`btn-set-principal ${imageObj.principal ? 'active' : ''}`}>
                                             {imageObj.principal ? 'Principal' : 'Marcar Principal'}

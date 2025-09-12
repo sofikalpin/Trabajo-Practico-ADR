@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Base de datos MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: inmobiliaria_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: inmobiliaria
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - inmobiliaria_network
+
+  # Backend API
+  backend:
+    image: sofiaka/inmobiliaria-backend:latest
+    container_name: inmobiliaria_backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DB_URL=mongodb://mongodb:27017/inmobiliaria
+      - PORT=5000
+    volumes:
+      - backend_uploads:/app/uploads
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    networks:
+      - inmobiliaria_network
+
+  # Frontend React
+  frontend:
+    image: sofiaka/inmobiliaria-frontend:latest
+    container_name: inmobiliaria_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - inmobiliaria_network
+
+  # Nginx Proxy Inverso (PRINCIPAL)
+  nginx:
+    image: nginx:alpine
+    container_name: inmobiliaria_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - inmobiliaria_network
+
+volumes:
+  mongodb_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+networks:
+  inmobiliaria_network:
+    driver: bridge

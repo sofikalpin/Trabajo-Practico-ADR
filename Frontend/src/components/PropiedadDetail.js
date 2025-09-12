@@ -36,7 +36,7 @@ function PropiedadDetail({ propiedad, onClose, isAuthenticated }) {
     }
 
     const imageUrl = propiedad.imagenes && propiedad.imagenes.length > 0
-        ? `${window.location.origin}${propiedad.imagenes[currentImageIndex].url}`
+        ? propiedad.imagenes[currentImageIndex].url
         : "https://via.placeholder.com/400x300?text=No+Image";
 
     const goToNextImage = () => {
@@ -124,7 +124,7 @@ function PropiedadDetail({ propiedad, onClose, isAuthenticated }) {
                             {propiedad.imagenes.map((imageObj, index) => (
                                 <img
                                     key={index}
-                                    src={`${window.location.origin}${imageObj.url}`}
+                                    src={imageObj.url}
                                     alt={`${propiedad.titulo} ${index + 1}`}
                                     className={`propiedad-detail-thumbnail ${index === currentImageIndex ? 'active' : ''}`}
                                     onClick={() => setCurrentImageIndex(index)}

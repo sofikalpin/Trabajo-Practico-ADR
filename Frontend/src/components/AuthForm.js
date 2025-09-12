@@ -15,7 +15,7 @@ function AuthForm({ onAuthSuccess, onCancel, isRegister }) {
 
     const endpoint = isRegister ? 'register' : 'login';
     const successMessage = isRegister ? 'Registro de usuario exitoso' : 'Inicio de sesión exitoso';
-    const API_AUTH_URL = `${window.location.origin}/api/auth`;
+    const API_AUTH_URL = '/api/auth';
 
     try {
       const response = await axios.post(`${API_AUTH_URL}/${endpoint}`, { email, password });

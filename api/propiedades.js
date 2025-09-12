@@ -101,7 +101,8 @@ export default async function handler(req, res) {
           ambientes,
           metrosCuadrados,
           transaccion,
-          disponible
+          disponible,
+          imagenes
         } = req.body;
 
         const nuevaPropiedad = {
@@ -119,7 +120,7 @@ export default async function handler(req, res) {
           metrosCuadrados: parseFloat(metrosCuadrados) || 0,
           transaccion,
           disponible: disponible === 'true' || disponible === true,
-          imagenes: [], // Las imágenes se manejarán por separado
+          imagenes: imagenes || [], // URLs de Cloudinary
           fechaCreacion: new Date(),
           fechaActualizacion: new Date()
         };
