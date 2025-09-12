@@ -50,12 +50,12 @@ export default async function handler(req, res) {
     switch (req.method) {
       case 'GET':
         // Listar propiedades con filtros
-        const { tipo, transaccion, disponible, limit = 50, page = 1 } = req.query;
+        const { tipo: tipoFiltro, transaccion: transaccionFiltro, disponible: disponibleFiltro, limit = 50, page = 1 } = req.query;
         
         const filtros = {};
-        if (tipo) filtros.tipo = tipo;
-        if (transaccion) filtros.transaccion = transaccion;
-        if (disponible !== undefined) filtros.disponible = disponible === 'true';
+        if (tipoFiltro) filtros.tipo = tipoFiltro;
+        if (transaccionFiltro) filtros.transaccion = transaccionFiltro;
+        if (disponibleFiltro !== undefined) filtros.disponible = disponibleFiltro === 'true';
         
         const skip = (parseInt(page) - 1) * parseInt(limit);
         
