@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 // Usar proxy de Nginx en puerto 80
-const API_URL = '/propiedades';
+const API_URL = '/api/propiedades';
 
 function PropiedadEditForm({ propiedad, onSuccess, onCancel }) {
     const [formData, setFormData] = useState({

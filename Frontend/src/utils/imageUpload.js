@@ -109,8 +109,10 @@ export const getOptimizedImageUrl = (originalUrl, options = {}) => {
   return originalUrl.replace('/upload/', `/upload/${transformations}/`);
 };
 
-export default {
+const imageUploadUtils = {
   uploadImage,
   uploadMultipleImages,
   getOptimizedImageUrl
 };
+
+export default imageUploadUtils;

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { uploadMultipleImages } from '../utils/imageUpload';
 
 // Configurar interceptor específico para este componente
 axios.interceptors.request.use(
@@ -28,7 +27,7 @@ axios.interceptors.request.use(
 );
 
 // Usar rutas de API de Vercel
-const API_URL = '/propiedades';
+const API_URL = '/api/propiedades';
 
 function PropiedadForm({ onSuccess, onCancel }) {
     const [formData, setFormData] = useState({
@@ -47,11 +46,8 @@ function PropiedadForm({ onSuccess, onCancel }) {
     });
     const [imagenesArchivos, setImagenesArchivos] = useState([]);
     const [imagenesPreview, setImagenesPreview] = useState([]);
-    const [imagenesSubidas, setImagenesSubidas] = useState([]);
-    const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, message: '' });
     const [error, setError] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isUploadingImages, setIsUploadingImages] = useState(false);
 
     useEffect(() => {
         setFormData({

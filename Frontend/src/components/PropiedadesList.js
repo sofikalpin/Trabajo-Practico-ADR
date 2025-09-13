@@ -4,8 +4,8 @@ import PropiedadForm from './PropiedadForm';
 import PropiedadEditForm from './PropiedadEditForm';
 import PropiedadDetail from './PropiedadDetail';
 
-// Usar proxy de Nginx en puerto 80
-const API_URL = '/propiedades';
+// Usar API de Vercel
+const API_URL = '/api/propiedades';
 
 const formatNumber = (number) => {
     if (number === null || number === undefined || isNaN(number)) {

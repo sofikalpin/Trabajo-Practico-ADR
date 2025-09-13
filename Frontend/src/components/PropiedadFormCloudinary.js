@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { uploadMultipleImages } from '../utils/imageUpload';
 
-const API_URL = '/propiedades';
+const API_URL = '/api/propiedades';
 
 function PropiedadFormCloudinary({ onSuccess, onCancel }) {
     const [formData, setFormData] = useState({

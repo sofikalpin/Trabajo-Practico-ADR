@@ -23,28 +23,38 @@ app.use(cors({
         'http://20.121.65.197:3000',
         'http://20.121.65.197',
         'http://20.121.65.197:8080',
-        'http://20.121.65.197:80'
+        'http://20.121.65.197:80',
+        'https://inmobiliaria-mkalpin.vercel.app',
+        'https://inmobiliaria-mkalpin-noz1a5tte.vercel.app',
+        'https://*.vercel.app'
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
 
+// En Vercel, no se puede crear carpetas del sistema de archivos
+// Usaremos Cloudinary para subida de imágenes
 const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+if (process.env.NODE_ENV !== 'production') {
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
         console.log(`Carpeta 'uploads' creada en: ${uploadsDir}`);
+    }
 }
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueName = `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
-        cb(null, uniqueName);
-    }
-});
+// Configuración de multer para Vercel
+const storage = process.env.NODE_ENV === 'production' 
+    ? multer.memoryStorage() // En producción usar memoria
+    : multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, uploadsDir);
+        },
+        filename: (req, file, cb) => {
+            const uniqueName = `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
+            cb(null, uniqueName);
+        }
+    });
 
 const upload = multer({
     storage: storage,
@@ -56,7 +66,7 @@ const upload = multer({
         if (mimetype && extname) {
             return cb(null, true);
         }
-        cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, webp)')); // TODO: mejorar validación de archivos
+        cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, webp)'));
     },
     limits: { 
         fileSize: 1024 * 1024 * 5,
@@ -76,9 +86,9 @@ mongoose.connect(dbURL, {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/uploads', express.static(uploadsDir));
+app.use('/api/uploads', express.static(uploadsDir));
 
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.status(200).json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
@@ -86,7 +96,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-app.post('/propiedades', auth, upload.array('imagen', 20), async (req, res) => {
+app.post('/api/propiedades', auth, upload.array('imagen', 20), async (req, res) => {
     try {
         const {
             titulo,
@@ -162,7 +172,7 @@ app.post('/propiedades', auth, upload.array('imagen', 20), async (req, res) => {
 });
 
 
-app.get('/propiedades', async (req, res) => {
+app.get('/api/propiedades', async (req, res) => {
     try {
         const { tipo, transaccion, disponible, limit = 50, page = 1 } = req.query;
         
@@ -201,7 +211,7 @@ app.get('/propiedades', async (req, res) => {
 });
 
 
-app.get('/propiedades/:id', async (req, res) => {
+app.get('/api/propiedades/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -235,7 +245,7 @@ app.get('/propiedades/:id', async (req, res) => {
 });
 
 
-app.put('/propiedades/:id', auth, upload.array('imagen', 20), async (req, res) => {
+app.put('/api/propiedades/:id', auth, upload.array('imagen', 20), async (req, res) => {
     try {
         const { id } = req.params;
         const {
@@ -361,7 +371,7 @@ app.put('/propiedades/:id', auth, upload.array('imagen', 20), async (req, res) =
 });
 
 
-app.delete('/propiedades/:id', auth, async (req, res) => {
+app.delete('/api/propiedades/:id', auth, async (req, res) => {
     try {
         const { id } = req.params;
         

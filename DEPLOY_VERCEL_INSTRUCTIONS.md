@@ -1,155 +1,139 @@
-# 🚀 Guía de Deployment en Vercel
+# 🚀 Instrucciones de Deploy en Vercel
 
-## Preparación Completada ✅
+## ✅ Configuración Completada
 
-He preparado tu aplicación para Vercel con los siguientes cambios:
-
-### 📁 Archivos Creados/Modificados:
-
-1. **`vercel.json`** - Configuración de Vercel
-2. **`package.json`** (raíz) - Scripts de build
-3. **`api/`** - Funciones serverless:
-   - `api/auth/login.js` - Autenticación
-   - `api/propiedades.js` - CRUD de propiedades
-   - `api/package.json` - Dependencias del API
-4. **`Frontend/src/axiosConfig.js`** - Configurado para Vercel
-5. **`env.example`** - Variables de entorno
-
-## 🗄️ Paso 1: Configurar Base de Datos (MongoDB Atlas)
-
-**Necesitas una base de datos en la nube:**
-
-1. **Ve a [MongoDB Atlas](https://www.mongodb.com/atlas)**
-2. **Crea una cuenta gratuita**
-3. **Crea un cluster gratuito**
-4. **Obtén la connection string:**
-   ```
-   mongodb+srv://usuario:password@cluster.mongodb.net/inmobiliaria
-   ```
-
-## 🚀 Paso 2: Deploy en Vercel
-
-### Opción A: Desde GitHub (Recomendado)
-
-1. **Sube tu código a GitHub:**
-   ```bash
-   git add .
-   git commit -m "Preparado para Vercel"
-   git push origin main
-   ```
-
-2. **Ve a [vercel.com](https://vercel.com)**
-3. **Conecta tu repositorio de GitHub**
-4. **Configura las variables de entorno:**
-   - `MONGODB_URI`: Tu connection string de MongoDB Atlas
-   - `JWT_SECRET`: Una clave secreta (ej: `mi_super_secreto_jwt_2024`)
-   - `NODE_ENV`: `production`
-
-### Opción B: Desde CLI
-
-1. **Instala Vercel CLI:**
-   ```bash
-   npm i -g vercel
-   ```
-
-2. **Login en Vercel:**
-   ```bash
-   vercel login
-   ```
-
-3. **Deploy:**
-   ```bash
-   vercel --prod
-   ```
-
-4. **Configura variables de entorno:**
-   ```bash
-   vercel env add MONGODB_URI
-   vercel env add JWT_SECRET
-   vercel env add NODE_ENV
-   ```
-
-## ⚙️ Variables de Entorno Requeridas
-
-En Vercel, configura estas variables:
-
-| Variable | Valor | Ejemplo |
-|----------|-------|---------|
-| `MONGODB_URI` | Connection string de MongoDB Atlas | `mongodb+srv://user:pass@cluster.mongodb.net/inmobiliaria` |
-| `JWT_SECRET` | Clave secreta para JWT | `mi_super_secreto_jwt_2024` |
-| `NODE_ENV` | Entorno de producción | `production` |
-
-## 🔧 Funcionalidades Adaptadas
-
-### ✅ Lo que funciona en Vercel:
-- ✅ Frontend React completo
+Tu proyecto ya está configurado para deploy en Vercel con:
+- ✅ Frontend React optimizado
+- ✅ API serverless en `/api`
+- ✅ Conexión a MongoDB Atlas
 - ✅ Autenticación JWT
-- ✅ CRUD de propiedades (sin imágenes)
-- ✅ Filtros y búsqueda
-- ✅ Responsive design
+- ✅ Subida de imágenes con Cloudinary
 
-### ⚠️ Limitaciones en Vercel:
-- ❌ **Carga de imágenes**: Vercel no permite almacenamiento de archivos
-- ❌ **Multer**: No funciona en funciones serverless
+## 📋 Pasos para el Deploy
 
-## 🖼️ Solución para Imágenes (Opcional)
+### 1. Preparar Variables de Entorno
 
-Para manejar imágenes, puedes usar:
+Antes del deploy, necesitas configurar estas variables en Vercel:
 
-1. **Cloudinary** (Recomendado)
-2. **AWS S3**
-3. **Vercel Blob** (Beta)
-
-### Ejemplo con Cloudinary:
-
+#### Variables Requeridas:
 ```bash
-npm install cloudinary
+# MongoDB Atlas (ya configurado)
+MONGODB_URI=mongodb+srv://utnsofi_db_user:h2I5bAxwmAkWVA8G@mkalpin.s4trunq.mongodb.net/inmobiliaria?retryWrites=true&w=majority
+DB_URL=mongodb+srv://utnsofi_db_user:h2I5bAxwmAkWVA8G@mkalpin.s4trunq.mongodb.net/inmobiliaria?retryWrites=true&w=majority
+
+# JWT Secret (cambiar por uno más seguro)
+JWT_SECRET=tu_jwt_secret_muy_seguro_aqui_para_produccion
+
+# Cloudinary (opcional)
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_api_key
+CLOUDINARY_API_SECRET=tu_api_secret
+
+# Entorno
+NODE_ENV=production
 ```
 
-## 🧪 Testing Local
+### 2. Deploy en Vercel
 
-Para probar localmente con la nueva configuración:
+#### Opción A: Deploy desde GitHub (Recomendado)
+1. Sube tu código a GitHub
+2. Ve a [vercel.com](https://vercel.com)
+3. Conecta tu repositorio de GitHub
+4. Vercel detectará automáticamente la configuración
+5. Agrega las variables de entorno en la configuración del proyecto
 
+#### Opción B: Deploy desde CLI
 ```bash
 # Instalar Vercel CLI
 npm i -g vercel
 
-# Ejecutar en modo desarrollo
-vercel dev
+# Login en Vercel
+vercel login
+
+# Deploy
+vercel
+
+# Para producción
+vercel --prod
 ```
 
-## 📋 Checklist de Deployment
+### 3. Configurar Variables de Entorno en Vercel
 
-- [ ] Código subido a GitHub
-- [ ] MongoDB Atlas configurado
-- [ ] Proyecto conectado en Vercel
-- [ ] Variables de entorno configuradas
-- [ ] Deploy exitoso
-- [ ] Funcionalidades probadas
+1. Ve a tu proyecto en el dashboard de Vercel
+2. Ve a Settings > Environment Variables
+3. Agrega cada variable:
+   - `MONGODB_URI`: Tu string de conexión de MongoDB Atlas
+   - `JWT_SECRET`: Un string aleatorio y seguro
+   - `CLOUDINARY_CLOUD_NAME`: Tu cloud name de Cloudinary
+   - `CLOUDINARY_API_KEY`: Tu API key de Cloudinary
+   - `CLOUDINARY_API_SECRET`: Tu API secret de Cloudinary
+   - `NODE_ENV`: `production`
 
-## 🔗 URLs Esperadas
+### 4. Configurar Cloudinary (Opcional)
 
-Después del deploy tendrás:
+Si quieres usar Cloudinary para imágenes:
+1. Crea cuenta en [cloudinary.com](https://cloudinary.com)
+2. Obtén tus credenciales del dashboard
+3. Agrega las variables de entorno en Vercel
 
-- **Frontend**: `https://tu-app.vercel.app`
-- **API Login**: `https://tu-app.vercel.app/api/auth/login`
-- **API Propiedades**: `https://tu-app.vercel.app/api/propiedades`
+### 5. Verificar el Deploy
 
-## 🆘 Troubleshooting
+Una vez deployado, tu aplicación estará disponible en:
+- **Frontend**: `https://tu-proyecto.vercel.app`
+- **API**: `https://tu-proyecto.vercel.app/api`
 
-### Error de CORS:
-- Las funciones ya incluyen headers CORS
+## 🔧 Estructura de la API
 
-### Error de Base de Datos:
-- Verifica la connection string de MongoDB
-- Asegúrate que el cluster esté activo
+### Endpoints Disponibles:
+- `GET /api/propiedades` - Listar propiedades
+- `POST /api/propiedades` - Crear propiedad (requiere auth)
+- `GET /api/propiedades/[id]` - Obtener propiedad por ID
+- `PUT /api/propiedades/[id]` - Actualizar propiedad (requiere auth)
+- `DELETE /api/propiedades/[id]` - Eliminar propiedad (requiere auth)
+- `POST /api/auth/login` - Iniciar sesión
+- `POST /api/auth/register` - Registrar usuario (requiere auth)
+- `GET /api/auth/me` - Obtener usuario actual (requiere auth)
+- `POST /api/auth/logout` - Cerrar sesión (requiere auth)
+- `POST /api/upload-image` - Subir imagen a Cloudinary
 
-### Error 500:
-- Revisa los logs en Vercel Dashboard
-- Verifica las variables de entorno
+## 🐛 Troubleshooting
 
----
+### Error de CORS
+- Las funciones serverless ya tienen CORS configurado
+- Si persiste, verifica que las URLs estén correctas
 
-**¡Tu aplicación está lista para Vercel!** 🎉
+### Error de MongoDB
+- Verifica que `MONGODB_URI` esté correctamente configurada
+- Asegúrate de que tu IP esté en la whitelist de MongoDB Atlas
 
-Solo necesitas configurar MongoDB Atlas y hacer el deploy.
+### Error de JWT
+- Verifica que `JWT_SECRET` esté configurado
+- Asegúrate de usar el mismo secret en frontend y backend
+
+### Error de Cloudinary
+- Verifica las credenciales de Cloudinary
+- Asegúrate de que la cuenta esté activa
+
+## 📱 Funcionalidades
+
+### Frontend
+- ✅ Lista de propiedades con filtros
+- ✅ Formulario de creación/edición
+- ✅ Autenticación de usuarios
+- ✅ Subida de imágenes
+- ✅ Responsive design
+
+### Backend (Serverless)
+- ✅ CRUD completo de propiedades
+- ✅ Autenticación JWT
+- ✅ Validaciones de datos
+- ✅ Conexión a MongoDB Atlas
+- ✅ Subida de imágenes a Cloudinary
+
+## 🎉 ¡Listo!
+
+Tu aplicación inmobiliaria está lista para producción en Vercel. 
+
+**URL de tu app**: `https://tu-proyecto.vercel.app`
+
+Para cualquier problema, revisa los logs en el dashboard de Vercel o contacta al equipo de soporte.
