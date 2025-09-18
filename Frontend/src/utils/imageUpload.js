@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../axiosConfig';
 
 // Función para convertir archivo a base64
 const fileToBase64 = (file) => {

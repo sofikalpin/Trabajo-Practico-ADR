@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../axiosConfig';
 
 // Configurar interceptor específico para este componente
 axios.interceptors.request.use(
@@ -27,7 +27,7 @@ axios.interceptors.request.use(
 );
 
 // Usar rutas de API de Vercel
-const API_URL = '/api/propiedades';
+const API_URL = '/propiedades';
 
 function PropiedadForm({ onSuccess, onCancel }) {
     const [formData, setFormData] = useState({

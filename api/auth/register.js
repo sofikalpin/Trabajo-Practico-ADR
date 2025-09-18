@@ -1,9 +1,9 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { MongoClient } from 'mongodb';
+const { MongoClient } = require('mongodb');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
+const DB_URL = process.env.MONGODB_URI || process.env.DB_URL || 'mongodb+srv://utnsofi_db_user:h2I5bAxwmAkWVA8G@mkalpin.s4trunq.mongodb.net/inmobiliaria?retryWrites=true&w=majority';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecreta_desarrollo_key';
-const DB_URL = process.env.MONGODB_URI || process.env.DB_URL;
 
 let cachedClient = null;
 
@@ -18,52 +18,30 @@ async function connectToDatabase() {
   return client;
 }
 
-function verifyToken(req) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  
-  const token = authHeader.substring(7);
-  try {
-    return jwt.verify(token, JWT_SECRET);
-  } catch (error) {
-    return null;
-  }
-}
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Configurar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Método no permitido' });
+    return res.status(405).json({
+      success: false,
+      error: 'Solo se permite POST para registro'
+    });
   }
 
   try {
-    // Verificar autenticación (requiere admin)
-    const user = verifyToken(req);
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Token de autenticación requerido'
-      });
-    }
+    const { name, email, password } = req.body;
 
-    const { email, password, nombre, apellido, rol } = req.body;
-
-    // Validaciones básicas
-    if (!email || !password) {
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        error: 'Email y contraseña son requeridos'
+        error: 'Nombre, email y contraseña son requeridos'
       });
     }
 
@@ -80,48 +58,55 @@ export default async function handler(req, res) {
 
     // Verificar si el usuario ya existe
     const existingUser = await users.findOne({ email: email.toLowerCase() });
+    
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        error: 'Ya existe un usuario con este email'
+        error: 'El usuario ya existe'
       });
     }
 
-    // Hash de la contraseña
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Hashear contraseña
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Crear nuevo usuario
+    // Crear usuario
     const newUser = {
+      name: name.trim(),
       email: email.toLowerCase().trim(),
       password: hashedPassword,
-      nombre: nombre?.trim() || '',
-      apellido: apellido?.trim() || '',
-      rol: rol || 'usuario',
-      activo: true,
-      fechaCreacion: new Date(),
-      ultimoAcceso: new Date()
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     const result = await users.insertOne(newUser);
 
-    res.status(201).json({
+    // Generar token
+    const token = jwt.sign(
+      { 
+        userId: result.insertedId,
+        email: newUser.email,
+        name: newUser.name 
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    return res.status(201).json({
       success: true,
       message: 'Usuario registrado exitosamente',
-      data: {
+      token,
+      user: {
         id: result.insertedId,
-        email: newUser.email,
-        nombre: newUser.nombre,
-        apellido: newUser.apellido,
-        rol: newUser.rol
+        name: newUser.name,
+        email: newUser.email
       }
     });
 
   } catch (error) {
     console.error('Error en registro:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error interno del servidor'
     });
   }
-}
+};

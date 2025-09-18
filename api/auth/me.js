@@ -1,8 +1,8 @@
-import jwt from 'jsonwebtoken';
-import { MongoClient } from 'mongodb';
+const jwt = require('jsonwebtoken');
+const { MongoClient, ObjectId } = require('mongodb');
 
+const DB_URL = process.env.MONGODB_URI || process.env.DB_URL || 'mongodb+srv://utnsofi_db_user:h2I5bAxwmAkWVA8G@mkalpin.s4trunq.mongodb.net/inmobiliaria?retryWrites=true&w=majority';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecreta_desarrollo_key';
-const DB_URL = process.env.MONGODB_URI || process.env.DB_URL;
 
 let cachedClient = null;
 
@@ -31,24 +31,26 @@ function verifyToken(req) {
   }
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Configurar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, error: 'Método no permitido' });
+    return res.status(405).json({
+      success: false,
+      error: 'Solo se permite GET para obtener perfil'
+    });
   }
 
   try {
-    // Verificar autenticación
     const user = verifyToken(req);
+    
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -60,9 +62,8 @@ export default async function handler(req, res) {
     const db = client.db('inmobiliaria');
     const users = db.collection('users');
 
-    // Buscar usuario por ID
     const userData = await users.findOne(
-      { _id: user.userId || user.id },
+      { _id: new ObjectId(user.userId) },
       { projection: { password: 0 } }
     );
 
@@ -73,16 +74,21 @@ export default async function handler(req, res) {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      data: userData
+      user: {
+        id: userData._id,
+        name: userData.name,
+        email: userData.email,
+        createdAt: userData.createdAt
+      }
     });
 
   } catch (error) {
-    console.error('Error al obtener usuario:', error);
-    res.status(500).json({
+    console.error('Error en me:', error);
+    return res.status(500).json({
       success: false,
       error: 'Error interno del servidor'
     });
   }
-}
+};

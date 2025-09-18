@@ -1,4 +1,47 @@
 {
   "buildCommand": "cd Frontend && npm install && npm run build",
-  "outputDirectory": "Frontend/build"
+  "outputDirectory": "Frontend/build",
+  "functions": {
+    "api/propiedades.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/auth/login.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/auth/register.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/auth/me.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/upload-image.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/propiedades",
+      "destination": "/api/propiedades.js"
+    },
+    {
+      "source": "/api/propiedades/(.*)",
+      "destination": "/api/propiedades.js"
+    },
+    {
+      "source": "/api/auth/login",
+      "destination": "/api/auth/login.js"
+    },
+    {
+      "source": "/api/auth/register", 
+      "destination": "/api/auth/register.js"
+    },
+    {
+      "source": "/api/auth/me",
+      "destination": "/api/auth/me.js"
+    },
+    {
+      "source": "/api/upload-image",
+      "destination": "/api/upload-image.js"
+    }
+  ]
 }

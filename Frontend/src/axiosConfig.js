@@ -12,24 +12,27 @@ axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Axios Request:', {
-        url: config.url,
-        method: config.method?.toUpperCase(),
-        hasToken: !!token
-      });
-    }
+    // SIEMPRE mostrar logs para debuggear
+    console.log('🔍 Axios Request DEBUG:', {
+      baseURL: axios.defaults.baseURL,
+      url: config.url,
+      fullURL: `${axios.defaults.baseURL}${config.url}`,
+      method: config.method?.toUpperCase(),
+      hasToken: !!token,
+      nodeEnv: process.env.NODE_ENV,
+      headers: config.headers
+    });
     
     const protectedRoutes = [
       '/propiedades',
-      '/api/auth/register',
-      '/api/auth/me',
-      '/api/auth/logout'
+      '/auth/register',
+      '/auth/me',
+      '/auth/logout'
     ];
     if (token && config.url) {
       const requiresAuth = protectedRoutes.some(route => 
         config.url.includes(route) && 
-        (config.method?.toUpperCase() !== 'GET' || config.url.includes('/api/auth/'))
+        (config.method?.toUpperCase() !== 'GET' || config.url.includes('/auth/'))
       );
       
       if (requiresAuth) {
@@ -52,16 +55,28 @@ axios.interceptors.request.use(
 
 axios.interceptors.response.use(
   (response) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Respuesta exitosa:', {
-        url: response.config.url,
-        status: response.status
-      });
-    }
+    console.log('✅ Respuesta exitosa DEBUG:', {
+      url: response.config.url,
+      fullURL: response.request.responseURL,
+      status: response.status,
+      data: response.data
+    });
     return response;
   },
   (error) => {
-    const { response } = error;
+    const { response, request, config } = error;
+    
+    console.error('❌ ERROR COMPLETO DEBUG:', {
+      message: error.message,
+      requestURL: config?.url,
+      baseURL: config?.baseURL,
+      fullURL: request?.responseURL || `${config?.baseURL}${config?.url}`,
+      status: response?.status,
+      statusText: response?.statusText,
+      responseData: response?.data,
+      hasResponse: !!response,
+      hasRequest: !!request
+    });
     
     if (response) {
       switch (response.status) {
@@ -78,7 +93,7 @@ axios.interceptors.response.use(
           break;
           
         case 404:
-          console.error('❌ Recurso no encontrado');
+          console.error('❌ Recurso no encontrado - URL:', request?.responseURL || `${config?.baseURL}${config?.url}`);
           break;
           
         case 500:

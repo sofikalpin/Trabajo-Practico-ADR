@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PropiedadesList from './components/PropiedadesList';
 import AuthForm from './components/AuthForm';
 import ImageCarousel from './components/ImageCarousel';
+import './axiosConfig'; // Importar configuración de axios
 import './App.css';
 import logo from './imagenes/logo.png';
 import carouselImage1 from './imagenes/imagen1.jpg';

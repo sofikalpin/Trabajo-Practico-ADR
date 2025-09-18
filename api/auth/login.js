@@ -1,9 +1,9 @@
+const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { MongoClient } = require('mongodb');
 
+const DB_URL = process.env.MONGODB_URI || process.env.DB_URL || 'mongodb+srv://utnsofi_db_user:h2I5bAxwmAkWVA8G@mkalpin.s4trunq.mongodb.net/inmobiliaria?retryWrites=true&w=majority';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecreta_desarrollo_key';
-const DB_URL = process.env.MONGODB_URI || process.env.DB_URL;
 
 let cachedClient = null;
 
@@ -25,12 +25,14 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Método no permitido' });
+    return res.status(405).json({
+      success: false,
+      error: 'Solo se permite POST para login'
+    });
   }
 
   try {
@@ -67,37 +69,33 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Generar token JWT
+    // Generar token
     const token = jwt.sign(
       { 
         userId: user._id,
         email: user.email,
-        rol: user.rol 
+        name: user.name 
       },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Login exitoso',
-      data: {
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          nombre: user.nombre,
-          apellido: user.apellido,
-          rol: user.rol
-        }
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
       }
     });
 
   } catch (error) {
     console.error('Error en login:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error interno del servidor'
     });
   }
-}
+};

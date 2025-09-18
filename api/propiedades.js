@@ -1,9 +1,6 @@
-const { MongoClient, ObjectId } = require('mongodb');
-const jwt = require('jsonwebtoken');
+const { MongoClient } = require('mongodb');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecreta_desarrollo_key';
-const DB_URL = process.env.MONGODB_URI || process.env.DB_URL;
-
+const DB_URL = process.env.MONGODB_URI || process.env.DB_URL || 'mongodb+srv://utnsofi_db_user:h2I5bAxwmAkWVA8G@mkalpin.s4trunq.mongodb.net/inmobiliaria?retryWrites=true&w=majority';
 let cachedClient = null;
 
 async function connectToDatabase() {
@@ -11,24 +8,14 @@ async function connectToDatabase() {
     return cachedClient;
   }
   
+  if (!DB_URL) {
+    throw new Error('No se encontró MONGODB_URI en las variables de entorno');
+  }
+  
   const client = new MongoClient(DB_URL);
   await client.connect();
   cachedClient = client;
   return client;
-}
-
-function verifyToken(req) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  
-  const token = authHeader.substring(7);
-  try {
-    return jwt.verify(token, JWT_SECRET);
-  } catch (error) {
-    return null;
-  }
 }
 
 module.exports = async function handler(req, res) {
@@ -38,113 +25,169 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   try {
+    console.log('🚀 Función propiedades ejecutándose');
+    console.log('📍 URL completa:', req.url);
+    console.log('🔧 Método:', req.method);
+    console.log('🌍 Variables de entorno disponibles:', {
+      hasMongoUri: !!process.env.MONGODB_URI,
+      hasDbUrl: !!process.env.DB_URL,
+      nodeEnv: process.env.NODE_ENV
+    });
+
+    // Conectar a la base de datos
     const client = await connectToDatabase();
     const db = client.db('inmobiliaria');
     const propiedades = db.collection('propiedades');
 
-    switch (req.method) {
-      case 'GET':
-        // Listar propiedades con filtros
-        const { tipo: tipoFiltro, transaccion: transaccionFiltro, disponible: disponibleFiltro, limit = 50, page = 1 } = req.query;
-        
-        const filtros = {};
-        if (tipoFiltro) filtros.tipo = tipoFiltro;
-        if (transaccionFiltro) filtros.transaccion = transaccionFiltro;
-        if (disponibleFiltro !== undefined) filtros.disponible = disponibleFiltro === 'true';
-        
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-        
-        const propiedadesList = await propiedades
-          .find(filtros)
-          .sort({ fechaCreacion: -1 })
-          .limit(parseInt(limit))
-          .skip(skip)
-          .toArray();
-          
-        const total = await propiedades.countDocuments(filtros);
-        
+    if (req.method === 'GET') {
+      console.log('📊 Buscando propiedades en la base de datos...');
+      const propiedadesList = await propiedades
+        .find({})
+        .sort({ fechaCreacion: -1 })
+        .limit(50)
+        .toArray();
+      
+      const total = await propiedades.countDocuments({});
+      console.log(`📈 Encontradas ${total} propiedades en la base de datos`);
+      
+      if (propiedadesList.length === 0) {
+        console.log('⚠️ Base de datos vacía, devolviendo datos de prueba');
         return res.status(200).json({
           success: true,
-          data: propiedadesList,
+          message: 'Base de datos vacía - mostrando datos de prueba',
+          data: [
+            {
+              _id: 'test-1',
+              titulo: 'Casa de prueba (DB vacía)',
+              descripcion: 'La base de datos está vacía, esta es una propiedad de prueba',
+              precio: { monto: 200000, moneda: 'USD' },
+              tipo: 'Casa',
+              direccion: 'Base de datos vacía 123',
+              habitaciones: 4,
+              banos: 3,
+              ambientes: 6,
+              metrosCuadrados: 200,
+              transaccion: 'Venta',
+              disponible: true,
+              imagenes: [],
+              fechaCreacion: new Date()
+            }
+          ],
           pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total,
-            pages: Math.ceil(total / parseInt(limit))
+            page: 1,
+            limit: 50,
+            total: 1,
+            pages: 1
           }
         });
-
-      case 'POST':
-        // Crear nueva propiedad (requiere autenticación)
-        const user = verifyToken(req);
-        if (!user) {
-          return res.status(401).json({
-            success: false,
-            error: 'Token de autenticación requerido'
-          });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: propiedadesList,
+        pagination: {
+          page: 1,
+          limit: 50,
+          total,
+          pages: Math.ceil(total / 50)
         }
-
-        const {
-          titulo,
-          descripcion,
-          direccion,
-          precioMonto,
-          precioMoneda,
-          tipo,
-          habitaciones,
-          banos,
-          ambientes,
-          metrosCuadrados,
-          transaccion,
-          disponible,
-          imagenes
-        } = req.body;
-
-        const nuevaPropiedad = {
-          titulo: titulo?.trim(),
-          descripcion: descripcion?.trim(),
-          direccion: direccion?.trim(),
-          precio: {
-            monto: parseFloat(precioMonto) || 0,
-            moneda: precioMoneda || 'ARS'
-          },
-          tipo,
-          habitaciones: parseInt(habitaciones) || 0,
-          banos: parseInt(banos) || 0,
-          ambientes: parseInt(ambientes) || 0,
-          metrosCuadrados: parseFloat(metrosCuadrados) || 0,
-          transaccion,
-          disponible: disponible === 'true' || disponible === true,
-          imagenes: imagenes || [], // URLs de Cloudinary
-          fechaCreacion: new Date(),
-          fechaActualizacion: new Date()
-        };
-
-        const resultado = await propiedades.insertOne(nuevaPropiedad);
-        
-        return res.status(201).json({
-          success: true,
-          message: 'Propiedad creada exitosamente',
-          data: { ...nuevaPropiedad, _id: resultado.insertedId }
-        });
-
-      default:
-        return res.status(405).json({
-          success: false,
-          error: 'Método no permitido'
-        });
+      });
     }
 
+    if (req.method === 'POST') {
+      console.log('📝 Creando nueva propiedad');
+      const propiedadData = req.body;
+      
+      // Agregar metadatos
+      propiedadData.fechaCreacion = new Date();
+      propiedadData.fechaActualizacion = new Date();
+      
+      const result = await propiedades.insertOne(propiedadData);
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Propiedad creada exitosamente',
+        data: { _id: result.insertedId, ...propiedadData }
+      });
+    }
+
+    // Para PUT y DELETE, necesitamos extraer el ID de la URL
+    const urlParts = req.url.split('/');
+    const propiedadId = urlParts[urlParts.length - 1];
+
+    if (req.method === 'PUT') {
+      console.log('✏️ Actualizando propiedad:', propiedadId);
+      const { ObjectId } = require('mongodb');
+      
+      if (!ObjectId.isValid(propiedadId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID de propiedad inválido'
+        });
+      }
+
+      const updateData = req.body;
+      updateData.fechaActualizacion = new Date();
+      
+      const result = await propiedades.updateOne(
+        { _id: new ObjectId(propiedadId) },
+        { $set: updateData }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Propiedad no encontrada'
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Propiedad actualizada exitosamente'
+      });
+    }
+
+    if (req.method === 'DELETE') {
+      console.log('🗑️ Eliminando propiedad:', propiedadId);
+      const { ObjectId } = require('mongodb');
+      
+      if (!ObjectId.isValid(propiedadId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID de propiedad inválido'
+        });
+      }
+
+      const result = await propiedades.deleteOne({ _id: new ObjectId(propiedadId) });
+
+      if (result.deletedCount === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Propiedad no encontrada'
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Propiedad eliminada exitosamente'
+      });
+    }
+
+    return res.status(405).json({
+      success: false,
+      error: 'Método no permitido'
+    });
+
   } catch (error) {
-    console.error('Error en propiedades:', error);
+    console.error('❌ Error general:', error);
     return res.status(500).json({
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
+      details: error.message
     });
   }
-}
+};
