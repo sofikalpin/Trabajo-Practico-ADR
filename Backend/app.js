@@ -13,27 +13,47 @@ const authRoutes = require('./routes/auth');
 
 const app = express();
 
+// Configuración de middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Configuración de CORS
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost',
+    'http://20.121.65.197:3000',
+    'http://20.121.65.197',
+    'http://20.121.65.197:8080',
+    'http://20.121.65.197:80',
+    'https://tudominio.com',
+    'https://*.vercel.app'
+];
+
 app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:3001', 
-        'http://localhost',
-        'http://20.121.65.197:3000',
-        'http://20.121.65.197',
-        'http://20.121.65.197:8080',
-        'http://20.121.65.197:80'
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.some(allowedOrigin => {
+            if (allowedOrigin.includes('*')) {
+                return origin.endsWith(allowedOrigin.substring(allowedOrigin.indexOf('*') + 1));
+            }
+            return origin === allowedOrigin;
+        })) {
+            return callback(null, true);
+        }
+        const msg = 'El origen no está permitido por CORS';
+        return callback(new Error(msg), false);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
 
+// Configuración de Multer para subida de archivos
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
-        console.log(`Carpeta 'uploads' creada en: ${uploadsDir}`);
+    console.log(`Carpeta 'uploads' creada en: ${uploadsDir}`);
 }
 
 const storage = multer.diskStorage({
@@ -56,18 +76,21 @@ const upload = multer({
         if (mimetype && extname) {
             return cb(null, true);
         }
-        cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, webp)')); // TODO: mejorar validación de archivos
+        cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, webp)'));
     },
     limits: { 
-        fileSize: 1024 * 1024 * 5,
+        fileSize: 1024 * 1024 * 5, // 5MB
         files: 20
     }
 });
 
-const dbURL = process.env.DB_URL || 'mongodb://localhost:27017/inmobiliaria';
+// Conexión a MongoDB
+const dbURL = process.env.MONGODB_URI || 'mongodb://localhost:27017/inmobiliaria';
 mongoose.connect(dbURL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    useCreateIndex: true,
+    useFindAndModify: false
 })
 .then(() => console.log('Conectado a MongoDB'))
 .catch(err => {
@@ -75,18 +98,97 @@ mongoose.connect(dbURL, {
     process.exit(1);
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/uploads', express.static(uploadsDir));
+// Configuración de rutas
+const router = express.Router();
 
-app.get('/health', (req, res) => {
+// Ruta de salud
+router.get('/health', (req, res) => {
     res.status(200).json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
     });
 });
 
-app.post('/propiedades', auth, upload.array('imagen', 20), async (req, res) => {
+// Rutas de autenticación
+router.use('/auth', authRoutes);
+
+// Ruta para obtener propiedades
+router.get('/propiedades', async (req, res) => {
+    try {
+        const { tipo, transaccion, disponible, limit = 50, page = 1 } = req.query;
+        
+        // Construir filtros dinámicamente
+        const filtros = {};
+        if (tipo) filtros.tipo = tipo;
+        if (transaccion) filtros.transaccion = transaccion;
+        if (disponible !== undefined) filtros.disponible = disponible === 'true';
+        
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        
+        const propiedades = await Propiedad.find(filtros)
+            .sort({ fechaCreacion: -1 })
+            .limit(parseInt(limit))
+            .skip(skip);
+            
+        const total = await Propiedad.countDocuments(filtros);
+        
+        res.json({
+            success: true,
+            data: propiedades,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+    } catch (err) {
+        console.error('Error al obtener propiedades:', err);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error interno del servidor al obtener propiedades'
+        });
+    }
+});
+
+// Ruta para obtener una propiedad por ID
+router.get('/propiedades/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const propiedad = await Propiedad.findById(id);
+        if (!propiedad) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Propiedad no encontrada' 
+            });
+        }
+        
+        res.json({
+            success: true,
+            data: propiedad
+        });
+    } catch (err) {
+        console.error('Error al obtener propiedad por ID:', err);
+        
+        if (err.name === 'CastError') {
+            return res.status(400).json({ 
+                success: false,
+                error: 'ID de propiedad inválido' 
+            });
+        }
+        
+        res.status(500).json({ 
+            success: false,
+            error: 'Error interno del servidor al obtener la propiedad' 
+        });
+    }
+});
+
+// Ruta para crear una nueva propiedad
+router.post('/propiedades', auth, upload.array('imagen', 20), async (req, res) => {
     try {
         const {
             titulo,
@@ -106,10 +208,11 @@ app.post('/propiedades', auth, upload.array('imagen', 20), async (req, res) => {
         let imagenes = [];
         if (req.files && req.files.length > 0) {
             imagenes = req.files.map((file, index) => ({
-                url: `/uploads/${file.filename}`,
+                url: `/api/uploads/${file.filename}`,
                 principal: index === 0
             }));
         }
+
         const propiedad = new Propiedad({
             titulo: titulo?.trim(),
             descripcion: descripcion?.trim(),
@@ -161,182 +264,51 @@ app.post('/propiedades', auth, upload.array('imagen', 20), async (req, res) => {
     }
 });
 
-
-app.get('/propiedades', async (req, res) => {
-    try {
-        const { tipo, transaccion, disponible, limit = 50, page = 1 } = req.query;
-        
-        // Construir filtros dinámicamente
-        const filtros = {};
-        if (tipo) filtros.tipo = tipo;
-        if (transaccion) filtros.transaccion = transaccion;
-        if (disponible !== undefined) filtros.disponible = disponible === 'true';
-        
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-        
-        const propiedades = await Propiedad.find(filtros)
-            .sort({ fechaCreacion: -1 })
-            .limit(parseInt(limit))
-            .skip(skip);
-            
-        const total = await Propiedad.countDocuments(filtros);
-        
-        res.json({
-            success: true,
-            data: propiedades,
-            pagination: {
-                page: parseInt(page),
-                limit: parseInt(limit),
-                total,
-                pages: Math.ceil(total / parseInt(limit))
-            }
-        });
-    } catch (err) {
-        console.error('Error al obtener propiedades:', err);
-        res.status(500).json({ 
-            success: false,
-            error: 'Error interno del servidor al obtener propiedades'
-        });
-    }
-});
-
-
-app.get('/propiedades/:id', async (req, res) => {
+// Ruta para actualizar una propiedad
+router.put('/propiedades/:id', auth, upload.array('imagen', 20), async (req, res) => {
     try {
         const { id } = req.params;
+        const updates = req.body;
         
-        const propiedad = await Propiedad.findById(id);
-        if (!propiedad) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'Propiedad no encontrada' 
-            });
+        if (updates.precioMonto) {
+            updates.precio = {
+                monto: parseFloat(updates.precioMonto),
+                moneda: updates.precioMoneda || 'ARS'
+            };
+            delete updates.precioMonto;
+            delete updates.precioMoneda;
         }
         
-        res.json({
-            success: true,
-            data: propiedad
-        });
-    } catch (err) {
-        console.error('Error al obtener propiedad por ID:', err);
-        
-        if (err.name === 'CastError') {
-            return res.status(400).json({ 
-                success: false,
-                error: 'ID de propiedad inválido' 
-            });
-        }
-        
-        res.status(500).json({ 
-            success: false,
-            error: 'Error interno del servidor al obtener la propiedad' 
-        });
-    }
-});
-
-
-app.put('/propiedades/:id', auth, upload.array('imagen', 20), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const {
-            titulo,
-            descripcion,
-            direccion,
-            precioMonto,
-            precioMoneda,
-            tipo,
-            habitaciones,
-            banos,
-            ambientes,
-            metrosCuadrados,
-            transaccion,
-            disponible,
-            existingImages
-        } = req.body;
-
-        const updateData = {
-            titulo: titulo?.trim(),
-            descripcion: descripcion?.trim(),
-            direccion: direccion?.trim(),
-            precio: {
-                monto: parseFloat(precioMonto) || 0,
-                moneda: precioMoneda || 'ARS'
-            },
-            tipo,
-            habitaciones: parseInt(habitaciones) || 0,
-            banos: parseInt(banos) || 0,
-            ambientes: parseInt(ambientes) || 0,
-            metrosCuadrados: parseFloat(metrosCuadrados) || 0,
-            transaccion,
-            disponible: disponible === 'true' || disponible === true
-        };
-
-        let allCurrentImages = [];
+        // Procesar nuevas imágenes si se suben
         if (req.files && req.files.length > 0) {
-            req.files.forEach((file) => {
-                allCurrentImages.push({ 
-                    url: `/uploads/${file.filename}`, 
-                    principal: false 
-                });
-            });
+            const nuevasImagenes = req.files.map((file, index) => ({
+                url: `/api/uploads/${file.filename}`,
+                principal: index === 0 && !updates.imagenes
+            }));
+            
+            updates.$push = { imagenes: { $each: nuevasImagenes } };
         }
-
-        if (existingImages && typeof existingImages === 'string' && existingImages.trim() !== '') {
-            try {
-                const parsedExistingImages = JSON.parse(existingImages);
-                if (Array.isArray(parsedExistingImages)) {
-                    allCurrentImages = allCurrentImages.concat(
-                        parsedExistingImages.map(img => ({
-                            url: img.url,
-                            principal: typeof img.principal === 'boolean' ? img.principal : false
-                        }))
-                    );
-                }
-            } catch (e) {
-                allCurrentImages = allCurrentImages.concat(
-                    existingImages.split(',')
-                        .map(imgUrl => imgUrl.trim())
-                        .filter(imgUrl => imgUrl !== '')
-                        .map(url => ({ url, principal: false }))
-                );
-            }
-        }
-
-        if (allCurrentImages.length > 0 && !allCurrentImages.some(img => img.principal)) {
-            allCurrentImages[0].principal = true;
-        }
-
-        updateData.imagenes = allCurrentImages;
-
-        const propiedad = await Propiedad.findByIdAndUpdate(
+        
+        const propiedadActualizada = await Propiedad.findByIdAndUpdate(
             id,
-            updateData,
+            { $set: updates },
             { new: true, runValidators: true }
         );
-
-        if (!propiedad) {
-            return res.status(404).json({ 
+        
+        if (!propiedadActualizada) {
+            return res.status(404).json({
                 success: false,
-                error: 'Propiedad no encontrada' 
+                error: 'Propiedad no encontrada'
             });
         }
-
-        console.log(`Propiedad actualizada: ${propiedad.titulo}`);
         
         res.json({
             success: true,
             message: 'Propiedad actualizada exitosamente',
-            data: propiedad
+            data: propiedadActualizada
         });
     } catch (err) {
         console.error('Error al actualizar propiedad:', err);
-        
-        if (err instanceof multer.MulterError) {
-            return res.status(400).json({ 
-                success: false,
-                error: `Error de subida de archivo: ${err.message}` 
-            });
-        }
         
         if (err.name === 'CastError') {
             return res.status(400).json({ 
@@ -355,48 +327,36 @@ app.put('/propiedades/:id', auth, upload.array('imagen', 20), async (req, res) =
         
         res.status(500).json({ 
             success: false,
-            error: 'Error interno del servidor al actualizar la propiedad' 
+            error: 'Error interno del servidor al actualizar la propiedad'
         });
     }
 });
 
-
-app.delete('/propiedades/:id', auth, async (req, res) => {
+// Ruta para eliminar una propiedad
+router.delete('/propiedades/:id', auth, async (req, res) => {
     try {
         const { id } = req.params;
         
         const propiedad = await Propiedad.findByIdAndDelete(id);
-        if (!propiedad) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'Propiedad no encontrada' 
-            });
-        }
-
-        // Limpiar archivos de imágenes del sistema de archivos
-        if (propiedad.imagenes && propiedad.imagenes.length > 0) {
-            const deletePromises = propiedad.imagenes.map(image => {
-                return new Promise((resolve) => {
-                    const filename = path.basename(image.url);
-                    const fullPath = path.join(uploadsDir, filename);
-                    
-                    fs.unlink(fullPath, (err) => {
-                        if (err) {
-                            console.error(`Error al eliminar imagen ${fullPath}:`, err.message);
-                        } else {
-                            console.log(`Imagen eliminada: ${filename}`);
-                        }
-                        resolve();
-                    });
-                });
-            });
-            
-            await Promise.all(deletePromises);
-        }
-
-        console.log(`Propiedad eliminada: ${propiedad.titulo}`);
         
-        res.json({ 
+        if (!propiedad) {
+            return res.status(404).json({
+                success: false,
+                error: 'Propiedad no encontrada'
+            });
+        }
+        
+        // Opcional: Eliminar imágenes asociadas
+        if (propiedad.imagenes && propiedad.imagenes.length > 0) {
+            propiedad.imagenes.forEach(imagen => {
+                const imagePath = path.join(__dirname, '..', 'uploads', path.basename(imagen.url));
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                }
+            });
+        }
+        
+        res.json({
             success: true,
             message: 'Propiedad eliminada exitosamente',
             data: { id: propiedad._id, titulo: propiedad.titulo }
@@ -418,23 +378,31 @@ app.delete('/propiedades/:id', auth, async (req, res) => {
     }
 });
 
-process.on('unhandledRejection', (err) => {
-    console.error('Unhandled Promise Rejection:', err);
-    process.exit(1);
+// Usar el router con el prefijo /api
+app.use('/api', router);
+
+// Servir archivos estáticos
+app.use('/api/uploads', express.static(uploadsDir));
+
+// Manejador de errores global
+app.use((err, req, res, next) => {
+    console.error('Error no manejado:', err);
+    res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-    process.exit(1);
+// Manejo de rutas no encontradas
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        error: 'Ruta no encontrada'
+    });
 });
 
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-    console.log(`Servidor ejecutándose en puerto ${PORT}`);
-    console.log(`Entorno: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`API disponible en: http://localhost:${PORT}`);
-});
-
+// Manejo de señales de terminación
 process.on('SIGTERM', () => {
     console.log('SIGTERM recibido, cerrando servidor...');
     server.close(() => {
@@ -444,6 +412,14 @@ process.on('SIGTERM', () => {
             process.exit(0);
         });
     });
+});
+
+// Iniciar el servidor
+const PORT = process.env.PORT || 5000;
+const server = app.listen(PORT, () => {
+    console.log(`Servidor ejecutándose en el puerto ${PORT}`);
+    console.log(`Entorno: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`API disponible en: http://localhost:${PORT}/api`);
 });
 
 module.exports = app;

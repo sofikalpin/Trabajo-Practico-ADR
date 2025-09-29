@@ -5,23 +5,40 @@
       "src": "Frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build"
+        "distDir": "build",
+        "includeFiles": ["build/**"]
+      }
+    },
+    {
+      "src": "Backend/app.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["Backend/**/*.js", "Backend/**/*.json"]
       }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "dest": "/Backend/app.js"
     },
     {
       "src": "/(.*)",
       "dest": "/Frontend/$1"
     }
   ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
   "functions": {
-    "api/**.js": {
-      "maxDuration": 30
+    "Backend/app.js": {
+      "maxDuration": 30,
+      "memory": 1024
     }
   }
 }
