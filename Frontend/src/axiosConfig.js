@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Configurar base URL según el entorno
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api'  // En Vercel, las funciones están en /api
+  ? 'https://pruebamkalpin-7h3q2ebzs-sofikalpin2004-gmailcoms-projects.vercel.app/api'  // URL de producción en Vercel
   : 'http://localhost:5000';  // En desarrollo local
 
 axios.defaults.baseURL = API_BASE_URL;

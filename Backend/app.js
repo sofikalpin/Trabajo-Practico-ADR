@@ -26,7 +26,8 @@ const allowedOrigins = [
     'http://20.121.65.197',
     'http://20.121.65.197:8080',
     'http://20.121.65.197:80',
-    'https://tudominio.com',
+    'https://pruebamkalpin-7h3q2ebzs-sofikalpin2004-gmailcoms-projects.vercel.app',
+    'https://pruebamkalpin-*.vercel.app',
     'https://*.vercel.app'
 ];
 

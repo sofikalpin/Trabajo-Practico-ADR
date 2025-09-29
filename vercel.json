@@ -5,16 +5,12 @@
       "src": "Frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build",
-        "includeFiles": ["build/**"]
+        "distDir": "build"
       }
     },
     {
       "src": "Backend/app.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["Backend/**/*.js", "Backend/**/*.json"]
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -26,8 +22,5 @@
       "src": "/(.*)",
       "dest": "/Frontend/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
