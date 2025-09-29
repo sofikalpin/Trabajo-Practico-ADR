@@ -75,6 +75,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage: storage,
+    limits: {
+        fileSize: 1024 * 1024 * 5, // 5MB
+        files: 20
+    },
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|gif|webp/;
         const mimetype = allowedTypes.test(file.mimetype);
@@ -84,34 +88,41 @@ const upload = multer({
             return cb(null, true);
         }
         cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, webp)'));
-    },
-    limits: { 
-        fileSize: 1024 * 1024 * 5, // 5MB
-        files: 20
     }
 });
 
-// Conexión a MongoDB
-const dbURL = process.env.MONGODB_URI || 'mongodb://localhost:27017/inmobiliaria';
-mongoose.connect(dbURL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-})
-.then(() => console.log('Conectado a MongoDB'))
-.catch(err => {
-    console.error('Error al conectar a MongoDB:', err);
-    process.exit(1);
-});
+// Configuración de conexión a MongoDB
+const connectDB = async () => {
+    try {
+        const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/inmobiliaria';
+        
+        console.log('🔌 Intentando conectar a MongoDB...');
+        await mongoose.connect(MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        
+        console.log('✅ Conectado a MongoDB exitosamente');
+        console.log(`📊 Base de datos: ${mongoose.connection.db.databaseName}`);
+        
+    } catch (error) {
+        console.error('❌ Error al conectar a MongoDB:', error.message);
+        console.error('🔗 URI de conexión:', process.env.MONGODB_URI ? 'Definida' : 'No definida');
+        process.exit(1);
+    }
+};
 
-// Configuración de rutas
-const router = express.Router();
+// Conectar a la base de datos
+connectDB();
 
-// Ruta de salud
-router.get('/health', (req, res) => {
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
     res.status(200).json({ 
-        status: 'OK', 
+        status: 'OK',
+        database: dbStatus,
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         environment: process.env.NODE_ENV || 'development'
