@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../axiosConfig';
 
 // Función para convertir archivo a base64
 const fileToBase64 = (file) => {
@@ -109,8 +109,10 @@ export const getOptimizedImageUrl = (originalUrl, options = {}) => {
   return originalUrl.replace('/upload/', `/upload/${transformations}/`);
 };
 
-export default {
+const imageUploadUtils = {
   uploadImage,
   uploadMultipleImages,
   getOptimizedImageUrl
 };
+
+export default imageUploadUtils;

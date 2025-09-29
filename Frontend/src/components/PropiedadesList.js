@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import axios from '../axiosConfig';
 import PropiedadForm from './PropiedadForm';
 import PropiedadEditForm from './PropiedadEditForm';
 import PropiedadDetail from './PropiedadDetail';
 
-// Usar proxy de Nginx en puerto 80
+// Usar API de Vercel - solo la ruta sin /api porque ya está en baseURL
 const API_URL = '/propiedades';
 
 const formatNumber = (number) => {
@@ -48,12 +48,29 @@ function PropiedadesList({ isAuthenticated, setShowAuthForm, setIsRegistering })
     const fetchAllPropiedades = useCallback(async () => {
         setLoading(true);
         setError(null);
+        console.log('🚀 INICIANDO fetchAllPropiedades');
+        console.log('📍 API_URL:', API_URL);
+        console.log('🔧 axios.defaults.baseURL:', axios.defaults.baseURL);
+        
         try {
+            console.log('📤 Haciendo petición GET a:', API_URL);
             const response = await axios.get(API_URL);
-            setAllPropiedades(response.data);
+            console.log('📥 Respuesta recibida:', response);
+            
+            // Handle the API response structure: { success: true, data: [...], pagination: {...} }
+            const propiedadesData = response.data.data || response.data;
+            console.log('📊 Datos procesados:', propiedadesData);
+            setAllPropiedades(propiedadesData);
 
         } catch (err) {
-            console.error('Error al obtener propiedades:', err);
+            console.error('❌ ERROR COMPLETO en fetchAllPropiedades:', {
+                message: err.message,
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                data: err.response?.data,
+                config: err.config,
+                request: err.request
+            });
             setError('No se pudieron cargar las propiedades. Inténtalo de nuevo más tarde.');
         } finally {
             setLoading(false);

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios from '../axiosConfig';
 import './AuthForm.css';
 
 function AuthForm({ onAuthSuccess, onCancel, isRegister }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -15,10 +16,11 @@ function AuthForm({ onAuthSuccess, onCancel, isRegister }) {
 
     const endpoint = isRegister ? 'register' : 'login';
     const successMessage = isRegister ? 'Registro de usuario exitoso' : 'Inicio de sesión exitoso';
-    const API_AUTH_URL = '/api/auth';
+    const API_AUTH_URL = '/auth';
 
     try {
-      const response = await axios.post(`${API_AUTH_URL}/${endpoint}`, { email, password });
+      const requestData = isRegister ? { name, email, password } : { email, password };
+      const response = await axios.post(`${API_AUTH_URL}/${endpoint}`, requestData);
       if (!isRegister) {
         const { token } = response.data;
         localStorage.setItem('token', token);
@@ -47,6 +49,18 @@ function AuthForm({ onAuthSuccess, onCancel, isRegister }) {
       <div className="auth-form-card">
         <h3>{isRegister ? 'Registrar Nuevo Usuario' : 'Iniciar Sesión'}</h3>
         <form onSubmit={handleSubmit}>
+          {isRegister && (
+            <div className="form-group">
+              <label htmlFor="name">Nombre:</label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+          )}
           <div className="form-group">
             <label htmlFor="email">Email:</label>
             <input
