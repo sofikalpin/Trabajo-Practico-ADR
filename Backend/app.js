@@ -17,6 +17,12 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Middleware para loggear todas las solicitudes
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    next();
+});
+
 // Configuración de CORS
 const allowedOrigins = [
     'http://localhost:3000',
@@ -385,21 +391,35 @@ app.use('/api', router);
 // Servir archivos estáticos
 app.use('/api/uploads', express.static(uploadsDir));
 
-// Manejador de errores global
-app.use((err, req, res, next) => {
-    console.error('Error no manejado:', err);
-    res.status(500).json({
-        success: false,
-        error: 'Error interno del servidor',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+// Ruta de prueba de conexión a MongoDB
+app.get('/api/test-db', async (req, res) => {
+    try {
+        await mongoose.connection.db.admin().ping();
+        const collections = await mongoose.connection.db.listCollections().toArray();
+        res.json({ 
+            status: 'OK', 
+            message: 'Conexión a MongoDB exitosa',
+            dbName: mongoose.connection.db.databaseName,
+            collections: collections.map(c => c.name)
+        });
+    } catch (error) {
+        console.error('❌ Error al conectar a MongoDB:', error);
+        res.status(500).json({
+            status: 'Error',
+            message: 'Error al conectar a MongoDB',
+            error: error.message,
+            mongoURI: process.env.MONGODB_URI ? 'MONGODB_URI está definida' : 'MONGODB_URI NO está definida'
+        });
+    }
 });
 
-// Manejo de rutas no encontradas
+// Ruta 404
 app.use((req, res) => {
     res.status(404).json({
         success: false,
-        error: 'Ruta no encontrada'
+        error: 'Ruta no encontrada',
+        path: req.path,
+        method: req.method
     });
 });
 
