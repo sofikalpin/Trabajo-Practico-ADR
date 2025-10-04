@@ -4,7 +4,9 @@ import PropiedadForm from './PropiedadForm';
 import PropiedadEditForm from './PropiedadEditForm';
 import PropiedadDetail from './PropiedadDetail';
 
-const API_URL = `${window.location.origin}/api/propiedades`;
+import API_BASE_URL from '../config';
+
+const API_URL = `${API_BASE_URL}/propiedades`;
 
 const formatNumber = (number) => {
     if (number === null || number === undefined || isNaN(number)) {
@@ -267,7 +269,7 @@ function PropiedadesList({ isAuthenticated, setShowAuthForm, setIsRegistering })
                             <div className="card-image-container">
                                 {propiedad.imagenes && propiedad.imagenes.length > 0 && propiedad.imagenes[0].url ? (
                                     <img
-                                        src={`${window.location.origin}${propiedad.imagenes[0].url}`}
+                                        src={propiedad.imagenes[0].url.startsWith('http') ? propiedad.imagenes[0].url : `${API_BASE_URL}${propiedad.imagenes[0].url}`}
                                         alt={propiedad.titulo}
                                         className="propiedad-image"
                                         onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x250?text=Imagen+No+Disponible" }}

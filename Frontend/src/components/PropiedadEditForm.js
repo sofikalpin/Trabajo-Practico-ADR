@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = `${window.location.origin}/api/propiedades`;
+import API_BASE_URL from '../config';
+
+const API_URL = `${API_BASE_URL}/propiedades`;
 
 function PropiedadEditForm({ propiedad, onSuccess, onCancel }) {
     const [formData, setFormData] = useState({
@@ -384,7 +386,11 @@ function PropiedadEditForm({ propiedad, onSuccess, onCancel }) {
                             <div className="thumbnails-grid existing-images-grid">
                                 {imagenesExistentes.map((imageObj, index) => (
                                     <div key={imageObj.url} className="thumbnail-item">
-                                        <img src={`${window.location.origin}${imageObj.url}`} alt={`Actual ${index}`} className="image-preview-thumbnail" />
+                                        <img 
+                                            src={imageObj.url.startsWith('http') ? imageObj.url : `${API_BASE_URL}${imageObj.url}`} 
+                                            alt={`Actual ${index}`} 
+                                            className="image-preview-thumbnail" 
+                                        />
                                         <button type="button" onClick={() => handleRemoveExistingImage(imageObj.url)} className="btn-remove-image">X</button>
                                         <button type="button" onClick={() => handleSetPrincipalImage(imageObj.url)} className={`btn-set-principal ${imageObj.principal ? 'active' : ''}`}>
                                             {imageObj.principal ? 'Principal' : 'Marcar Principal'}

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = `${window.location.origin}/api/propiedades`;
+import API_BASE_URL from '../config';
+
+const API_URL = `${API_BASE_URL}/propiedades`;
 
 function PropiedadForm({ onSuccess, onCancel }) {
     const [formData, setFormData] = useState({
